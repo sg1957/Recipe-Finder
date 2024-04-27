@@ -1,0 +1,70 @@
+import requests
+class RecipeFinder:
+def __init__(self):
+self.api_endpoint = "https://api.spoonacular.com/recipes/findByIngredients"
+self.api_key = "6b0882a9267347e8ba67d522a5ec4a7b"
+def get_user_input(self):
+meal_type = input("What type of meal would you like? (breakfast, lunch, or
+dinner)? ").lower()
+ingredients = input("Enter the ingredients you have (comma-separated):
+").split(',')
+return meal_type, ingredients
+def find_recipes(self, meal_type, ingredients):
+params = {
+'type': meal_type,
+'ingredients': ','.join(ingredients),
+'apiKey': self.api_key,
+}
+try:
+response = requests.get(self.api_endpoint, params=params)
+response.raise_for_status() # Check for HTTP errors
+recipes = response.json()
+return recipes
+except requests.RequestException as e:
+print(f"Error connecting to the API: {e}")
+return None
+def display_recipes(self, recipes):
+if not recipes:
+print("There are no recipes found.")
+return
+for index, recipe in enumerate(recipes, start=1):
+recipe_data = recipe.get('title', 'Unknown Title')
+print(f"\nRecipe {index}: {recipe_data}")
+ingredients = [ingredient['name'] for ingredient in
+recipe.get('usedIngredients', [])]
+print("Ingredients:", ', '.join(ingredients))
+instructions = self.get_detailed_instructions(recipe.get('id'))
+print("Instructions:", instructions or 'No instructions available')
+def get_detailed_instructions(self, recipe_id):
+api_endpoint =
+f"https://api.spoonacular.com/recipes/{recipe_id}/analyzedInstructions"
+params = {'apiKey': self.api_key}
+try:
+response = requests.get(api_endpoint, params=params)
+response.raise_for_status() # Check for HTTP errors
+instructions_data = response.json()
+# Check if 'steps' is not empty
+if instructions_data and 'steps' in instructions_data[0]:
+instructions = [step['step'] for step in instructions_data[0]
+['steps']]
+return '\n'.join(instructions)
+except requests.RequestException as e:
+print(f"Error connecting to the API for detailed instructions: {e}")
+# Ensure the return statement is inside the function
+return None
+def main():
+try:
+recipe_finder = RecipeFinder()
+while True:
+meal_type, ingredients = recipe_finder.get_user_input()
+recipes = recipe_finder.find_recipes(meal_type, ingredients)
+if recipes is not None:
+recipe_finder.display_recipes(recipes)
+try_again = input("Do you want to try a different meal? (yes/no):
+").lower()
+if try_again != 'yes':
+break
+except Exception as e:
+print(f"An unexpected error occurred: {e}")
+if __name__ == "__main__":
+main()
